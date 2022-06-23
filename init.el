@@ -90,10 +90,27 @@
 (use-package yaml-mode)
 (use-package ace-window)
 
+(use-package lsp-mode :ensure t
+  :init
+  (setq lsp-keymap-prefix "C-c C-r")
+  (setq gc-cons-threshold 100000000)
+  (setq read-process-output-max (* 1024 1024))
+  (setq lsp-enable-symbol-highlighting nil)
+  (setq lsp-headerline-breadcrumb-enable nil)
+  (setq lsp-ui-doc-show-with-cursor nil)
+  (setq lsp-ui-doc-show-with-mouse nil)
+  (setq treemacs-space-between-root-nodes nil)
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 1)
+  (setq lsp-idle-delay 0.0)
+  (setq lsp-file-watch-threshold 20000)
+  (add-hook 'c++-mode-hook 'lsp)
+  )
+
 ;; My own packages
 (add-to-list 'load-path (concat user-emacs-directory "pp"))
 
-;;(require 'pp-cpp-utils)
+(require 'pp-cpp-utils)
 (require 'pp-misc-options)
 (require 'pp-avy)  
 (require 'pp-keybindings)

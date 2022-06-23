@@ -4,14 +4,16 @@
 (setq myfont nil)
 (if myfont
     (setq default-frame-alist (list (cons 'font myfont ))))
-(set-face-attribute 'default nil :height 150)
+
+(if (string-equal system-type "darwin")
+    (set-face-attribute 'default nil :height 150))
+
 (blink-cursor-mode 0)
 (setq initial-scratch-message "")
 (setq inhibit-startup-message t)
 (setq visible-bell t)
 (setq make-backup-files nil)
 (scroll-bar-mode 0)
-(tool-bar-mode 0)
 (menu-bar-mode 0)
 (show-paren-mode)
 (column-number-mode t)
