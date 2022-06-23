@@ -57,7 +57,6 @@
 
 (use-package org
   :init
-
   (setq org-confirm-babel-evaluate nil)
   (setq org-startup-indented t)
   (setq org-export-html-style-include-scripts nil
@@ -67,10 +66,8 @@
   (setq org-return-follows-link 1)
   (setq org-startup-truncated nil)
   (setq org-agenda-span 14)
-
   (add-hook 'org-capture-mode-hook 'evil-insert-state)
   (add-hook 'org-mode-hook 'turn-on-flyspell)
-
   ;; dot
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -87,10 +84,19 @@
 
 (use-package magit)
 
+(use-package ag)
+(use-package buffer-move)
+(use-package cmake-mode)
+(use-package yaml-mode)
+(use-package ace-window)
+
 ;; My own packages
 (add-to-list 'load-path (concat user-emacs-directory "pp"))
+
+;;(require 'pp-cpp-utils)
 (require 'pp-misc-options)
 (require 'pp-avy)  
 (require 'pp-keybindings)
 
-  
+;; Show home by default
+(dired "~")

@@ -4,6 +4,7 @@
 (setq myfont nil)
 (if myfont
     (setq default-frame-alist (list (cons 'font myfont ))))
+(set-face-attribute 'default nil :height 150)
 (blink-cursor-mode 0)
 (setq initial-scratch-message "")
 (setq inhibit-startup-message t)
@@ -46,6 +47,9 @@
 (setq window-combination-resize t)
 
 ;; set dired to show directories first, then files
+;; The mac's ls command does not support --group-directories-first so we switch to gls
+(if (string-equal system-type "darwin")
+    (setq insert-directory-program "gls" dired-use-ls-dired t))
 (setq dired-listing-switches "-lL --group-directories-first")
 
 (defvar parameters

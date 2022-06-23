@@ -6,3 +6,5 @@ transient/
 bookmarks
 .org-id-locations
 /org-roam.db
+/org-persist/
+
