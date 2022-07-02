@@ -107,6 +107,20 @@
   (add-hook 'c++-mode-hook 'lsp)
   )
 
+(use-package helm
+  :init
+  (setq helm-echo-input-in-header-line t)
+  (setq helm-split-window-in-side-p t)
+  (defun helm-hide-minibuffer-maybe ()
+    (when (with-helm-buffer helm-echo-input-in-header-line)
+      (let ((ov (make-overlay (point-min) (point-max) nil nil t)))
+  	(overlay-put ov 'window (selected-window))
+  	(overlay-put ov 'face (let ((bg-color (face-background 'default nil)))
+  				`(:background ,bg-color :foreground ,bg-color)))
+  	(setq-local cursor-type nil))))
+  :config
+  (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe))
+
 ;; My own packages
 (add-to-list 'load-path (concat user-emacs-directory "pp"))
 
