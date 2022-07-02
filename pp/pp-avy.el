@@ -6,13 +6,10 @@
 (provide 'pp-avy)
 
 (defun repo-path (for-file)
-  (let ((rr (locate-dominating-file for-file ".hg")))
+  (let ((rr (locate-dominating-file for-file ".git")))
     (if rr
 	(expand-file-name rr)
-      (let ((rr (locate-dominating-file for-file ".git")))
-	(if rr
-	    (expand-file-name rr)
-	  nil)))))
+      nil)))
 
 (defun repo-name (for-file)
   (let ((rp (repo-path for-file)))
@@ -35,7 +32,7 @@
     (if (file-exists-p (concat repo "/.hg"))
 	(setq r (process-lines "hg" "manifest"))
       (if (file-exists-p (concat repo "/.git"))
-	(setq r (process-lines "git" "ls-files"))))
+	  (setq r (process-lines "git" "ls-files"))))
     (setq default-directory d)
     r))
 
@@ -51,16 +48,13 @@
 	  col)))))
 
 (defun current-repo ()
-  (let ((rp (repo-path default-directory)))
-    (if rp
-	rp
-      "~/Noom/backend/")))
+  (repo-path default-directory))
 
 (defun get-includes (repo-root)
   (split-string 
    (shell-command-to-string
     (format "%s/tools/get_includes.sh" repo-root))))
-  
+
 (defun get-good-bms()
   (let ((bad-bms '("\\RTags_")))
     (cl-remove-if (lambda (bn)
@@ -71,12 +65,12 @@
   (let ((bad-buffers '("\\` " 
 		       "\\*helm"
 		       "\\*"
-			 "\\*Debug helm" 
-			 "\\*fsm-debug" 
-			 "\\*helm-mode" 
-			 "\\*Echo Area" 
-			 "\\*Completions"
-			 "\\*Minibuf")))
+		       "\\*Debug helm" 
+		       "\\*fsm-debug" 
+		       "\\*helm-mode" 
+		       "\\*Echo Area" 
+		       "\\*Completions"
+		       "\\*Minibuf")))
     (mapcar (lambda (b)
 	      (cons (buffer-name b) b))
 	    (cl-remove-if (lambda (b)
@@ -86,9 +80,11 @@
 
 (defun repo-candidates ()
   (let ((repo (current-repo)))
-    (mapcar (lambda (f)
-	      (cons f repo))
-	    (get-repo-manifest repo))))
+    (if repo
+	(mapcar (lambda (f)
+		  (cons (file-name-nondirectory f)
+			(format "%s/%s" repo f)))
+		(get-repo-manifest repo)))))
 
 (defun buffer-candidates()
   (get-good-buffers))
@@ -99,12 +95,14 @@
 	  (get-good-bms)))
 
 (defun get-all-choices ()
-  (remove-duplicates  (cl-concatenate 'list (buffer-candidates)
-				      (repo-candidates)
-				      (bm-candidates))
-                      :test (lambda (x y) (equal (car x) (car y)))
-                      :from-end t))
+  (let ((tree
+	 (avl-tree-create '(lambda (a b) (string< (car a) (car b))))))
+    (mapc (lambda (f) (avl-tree-enter tree f)) (buffer-candidates))
+    (mapc (lambda (f) (avl-tree-enter tree f)) (bm-candidates))
+    (mapc (lambda (f) (avl-tree-enter tree f)) (repo-candidates))
+    (avl-tree-flatten tree)))
 
+			  
 (defun pp-avy-switch()
   (interactive)
   (ivy-read ": "
@@ -115,7 +113,7 @@
 			    (switch-to-buffer target)
 			  (if (equal target 'bookmark)
 			      (bookmark-jump (car c))
-			    (find-file (format "%s/%s" target (car c)))))))))
+			    (find-file target)))))))
 
 (defun get-pretty-includes()
   (mapcar (lambda (f)
@@ -125,7 +123,7 @@
 (defun pp-avy-include()
   (interactive)
   (ivy-read "Include: "
-   (get-pretty-includes)
-   :action (lambda (file)
-	     (insert (format "#include %s\n" (cdr file))))))
+	    (get-pretty-includes)
+	    :action (lambda (file)
+		      (insert (format "#include %s\n" (cdr file))))))
 
