@@ -33,13 +33,13 @@
 
 (defun pp-compile-finish (buffer outstr)
   (if (string-match "finished" outstr)
-	(delete-windows-on buffer)))
+      (delete-windows-on buffer)))
 
 (add-hook 'compilation-finish-functions 'pp-compile-finish)
 
 (defadvice compilation-start
-  (around inhibit-display
-	  (command &optional mode name-function highlight-regexp))
+    (around inhibit-display
+	    (command &optional mode name-function highlight-regexp))
   (if (not (string-match "^\\(find\\|grep\\|ag\\)" command))
       (flet ((display-buffer)
              (set-window-point)
@@ -92,69 +92,60 @@
 (setq auto-mode-alist (cons '("\\.cc\\'" . c++-mode) auto-mode-alist))
 (setq auto-mode-alist (cons '("\\.ipp\\'" . c++-mode) auto-mode-alist))
 
-(defun c++-get-file-name-extension ()
-  "Extract the extension (.cpp in X.cpp) from the current buffers file name if possible"
-  (interactive)
-  (let (stem-end file-name)
-    (setq file-name (file-name-nondirectory  buffer-file-name))
-    (setq stem-end (string-match "\\.\\(cpp\\|C\\|\\H|cc\\|h\\)$" file-name ))
+
+(defun pp-next-cpp-extension (extension)
+  (cond
+   ((string= extension "h") "H")
+   ((string= extension "H") "cc")
+   ((string= extension "cc") "cpp")
+   ((string= extension "cpp") "C")
+   ((string= extension "C") "h")))
+
+(defun pp-cpp-extension (cpp-path)
+  (let ((stem-end (string-match "\\.\\(cpp\\|C\\|\\H|cc\\|h\\)$" cpp-path)))
     (if stem-end
-	(substring file-name stem-end))))
+	(substring cpp-path (+ 1 stem-end)))))
 
-(defun c++-get-file-name-stem ()
-  "Extract the stem (X in X.cpp, X.h, X.cc) from the file name if possible"
+(defun pp-cpp-stem (cpp-path)
+  (let ((extension (pp-cpp-extension cpp-path)))
+    (if extension
+	(substring cpp-path 0
+		   (- (length cpp-path) (length extension) 1)))))
+
+(defun pp-find-first-related-cpp-path (cpp-path &optional last-extension-tried)
+  (let* ((extension (pp-cpp-extension cpp-path))
+	 (stem (pp-cpp-stem cpp-path))
+	 (extension-to-try (pp-next-cpp-extension (if last-extension-tried
+						      last-extension-tried
+						    extension))))
+    (message extension)
+    (message stem)
+    (message extension-to-try)
+    
+    (if (and extension-to-try
+	     (not (string= extension-to-try extension)))
+	(let ((candidate (concat stem "." extension-to-try)))
+	  (if (or (get-file-buffer candidate)
+		  (file-exists-p candidate))
+	      candidate
+	    (pp-find-first-related-cpp-path cpp-path extension-to-try))))))
+
+(defun pp-cpp-goto-related-file()
+  "Cycle between .h,.H,cc,cpp,C files with the same stem in their names"
   (interactive)
-  (let (stem-end file-name)
-    (setq file-name (file-name-nondirectory  buffer-file-name))
-    (setq stem-end (string-match "\\.\\(cpp\\|cc\\|h\\)$" file-name ))
-    (if stem-end
-	(substring file-name 0 stem-end))))
+  (message "--------------------------------------------------------------------------------")
+  (let ((related-file (pp-find-first-related-cpp-path buffer-file-name)))
+    (if related-file
+	(if (get-file-buffer related-file)
+	    (switch-to-buffer (get-file-buffer related-file))
+	  (find-file related-file)))))
 
-(defun c++-cycle-to (extension)
-  (let (directory file-name)
-    (setq directory (file-name-directory  buffer-file-name))
-    (setq file-name (concat directory (c++-get-file-name-stem) extension))
-    (if (get-file-buffer file-name)
-	(progn
-	  (switch-to-buffer (get-file-buffer file-name))
-	  (pulse-window))
-      (if (file-exists-p file-name)
-	  (progn
-	    (find-file file-name)
-	    (pulse-window))))))
-
-(defun c++-cycle-through-related-files ()
-  "Cycle from .h to .cc to .cpp files"
-  (interactive)
-  (let (extension)
-    (setq extension (c++-get-file-name-extension))
-    (if (string=(downcase extension) ".h") 
-
-	(or (c++-cycle-to ".cc") 
-	    (c++-cycle-to ".cpp"))
-      (if (string=(downcase extension) ".cc")
-	  (or (c++-cycle-to ".cpp") 
-	      (c++-cycle-to ".h"))
-	(if (string=(downcase extension) ".cpp")
-	    (or (c++-cycle-to ".h") 
-		(c++-cycle-to ".cc"))
-	  (message "File name does not end in .h, .cc or .cpp"))))))
-
-(defun c++-get-file-name-stem ()
-  "Extract the stem (X in X.cpp, X.h, X.cc) from the file name if possible"
-  (interactive)
-  (let (stem-end file-name)
-    (setq file-name (file-name-nondirectory  buffer-file-name))
-    (setq stem-end (string-match "\\.\\(cpp\\|cc\\|h\\)$" file-name ))
-    (if stem-end
-	(substring file-name 0 stem-end))))
-
-(defun c++-insert-file-name-stem ()
+(defun pp-cpp-insert-file-name-stem ()
   "Insert in the current buffer the result of c++-get-file-name-stem"
   (interactive)
-  (if (c++-get-file-name-stem)
-      (insert (c++-get-file-name-stem))
-    (message "File name does not end in .h, .cc or .cpp")))
+  (if (pp-cpp-stem (buffer-file-name))
+      (insert (file-name-nondirectory (pp-cpp-stem (buffer-file-name))))
+    (message "Not a C++ file")))
 
 (defun my-c++-setup ()
   "changes to the default C++ setup"

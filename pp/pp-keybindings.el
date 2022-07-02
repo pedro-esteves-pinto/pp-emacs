@@ -41,7 +41,7 @@
   "b" '(lambda() (interactive) (pp-cpp-build nil))
   "B" '(lambda() (interactive) (pp-cpp-build t))
   "m" 'c-mark-function
-  "v" 'c++-cycle-through-related-files
+  "v" 'pp-cpp-goto-related-file
   "i" 'pp-avy-include)
 
 (evil-leader/set-key-for-mode 'python-mode 
@@ -118,7 +118,7 @@
   (define-key c-mode-base-map (kbd "M-E") 'my-previous-error)
   (define-key c-mode-base-map (kbd "M-j") 'forward-paragraph)
   (define-key c-mode-base-map (kbd "M-k") 'backward-paragraph)
-  (define-key c-mode-base-map (kbd "M-n") 'c++-insert-file-name-stem)
+  (define-key c-mode-base-map (kbd "M-n") 'pp-cpp-insert-file-name-stem)
   (define-key c-mode-base-map (kbd "M-RET") 'yas-expand)
   (define-key c-mode-base-map (kbd "<C-tab>") (function company-complete)))
 
