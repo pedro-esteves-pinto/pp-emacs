@@ -83,16 +83,26 @@
   (org-roam-db-autosync-mode))
 
 (use-package magit)
-
 (use-package ag)
 (use-package buffer-move)
 (use-package cmake-mode)
 (use-package yaml-mode)
 (use-package ace-window)
 
+(use-package solarized-theme
+  :init
+  (setq solarized-scale-org-headlines nil)
+  ;; Avoid all font-size changes
+  (setq solarized-height-minus-1 1.0)
+  (setq solarized-height-plus-1 1.0)
+  (setq solarized-height-plus-2 1.0)
+  (setq solarized-height-plus-3 1.0)
+  (setq solarized-height-plus-4 1.0))
+
+
 (use-package lsp-mode :ensure t
   :init
-  (setq lsp-keymap-prefix "C-c C-r")
+  (setq lsp-keymap-prefix "C-c C-l")
   (setq gc-cons-threshold 100000000)
   (setq read-process-output-max (* 1024 1024))
   (setq lsp-enable-symbol-highlighting nil)
@@ -122,17 +132,9 @@
   (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe))
 
 (use-package flycheck)
+(use-package vterm)
+(use-package company)
 
-(use-package solarized-theme
-  :init
-  (setq solarized-scale-org-headlines nil)
-  ;; Avoid all font-size changes
-  (setq solarized-height-minus-1 1.0)
-  (setq solarized-height-plus-1 1.0)
-  (setq solarized-height-plus-2 1.0)
-  (setq solarized-height-plus-3 1.0)
-  (setq solarized-height-plus-4 1.0))
-  
 ;; My own packages
 (add-to-list 'load-path (concat user-emacs-directory "pp"))
 
