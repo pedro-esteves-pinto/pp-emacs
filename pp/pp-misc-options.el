@@ -15,6 +15,7 @@
 (setq make-backup-files nil)
 (scroll-bar-mode 0)
 (menu-bar-mode 0)
+(tool-bar-mode 0)
 (show-paren-mode)
 (column-number-mode t)
 (mouse-avoidance-mode 'animate)                  ; Move pointer to avoid collision with point
