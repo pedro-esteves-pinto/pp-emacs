@@ -19,20 +19,16 @@
 
 (defun get-repo-version (rp)
   (chomp (shell-command-to-string
-	  (if (file-exists-p (concat rp "/.hg"))
-	      (format "cd %s ; hg tip | head -n 1" rp)
-	    (if (file-exists-p (concat rp "/.git"))
-		(format "cd %s ; git log -n 1 | head -n 1" rp)
-	      nil)))))
+	  (if (file-exists-p (concat rp "/.git"))
+	      (format "cd %s ; git log -n 1 | head -n 1" rp)
+	    nil))))
 
 (defun get-repo-manifest-from-disk (repo)
   (let ((d default-directory))
     (setq default-directory repo)
     (setq r '())
-    (if (file-exists-p (concat repo "/.hg"))
-	(setq r (process-lines "hg" "manifest"))
-      (if (file-exists-p (concat repo "/.git"))
-	  (setq r (process-lines "git" "ls-files"))))
+    (if (file-exists-p (concat repo "/.git"))
+	(setq r (process-lines "git" "ls-files")))
     (setq default-directory d)
     r))
 
@@ -102,7 +98,7 @@
     (mapc (lambda (f) (avl-tree-enter tree f)) (repo-candidates))
     (avl-tree-flatten tree)))
 
-			  
+
 (defun pp-avy-switch()
   (interactive)
   (ivy-read ": "
