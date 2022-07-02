@@ -24,13 +24,14 @@
 	    nil))))
 
 (defun get-repo-manifest-from-disk (repo)
-  (let ((d default-directory))
-    (setq default-directory repo)
-    (setq r '())
-    (if (file-exists-p (concat repo "/.git"))
-	(setq r (process-lines "git" "ls-files")))
-    (setq default-directory d)
-    r))
+  (if (file-exists-p (concat repo "/.git"))
+      (let ((d default-directory) (r '()))
+	(setq default-directory repo)
+	(with-temp-buffer
+	  (process-file "git" nil t nil "ls-files")
+	  (setq r (split-string (buffer-string))))
+	(setq default-directory d)
+	r)))
 
 (setq repo-cache (make-hash-table :test 'equal))
 
