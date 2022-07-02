@@ -97,7 +97,7 @@
   (interactive)
   (let (stem-end file-name)
     (setq file-name (file-name-nondirectory  buffer-file-name))
-    (setq stem-end (string-match "\\.\\(cpp\\|cc\\|h\\)$" file-name ))
+    (setq stem-end (string-match "\\.\\(cpp\\|C\\|\\H|cc\\|h\\)$" file-name ))
     (if stem-end
 	(substring file-name stem-end))))
 
