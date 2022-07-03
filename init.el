@@ -117,6 +117,18 @@
   (add-hook 'c++-mode-hook 'lsp)
   )
 
+;; (use-package eldoc
+;;   :init
+;;   (setq eldoc-echo-area-use-multiline-p nil))
+
+;; (use-package eglot
+;;   :init
+;;   (add-hook 'c++-mode-hook
+;; 	    #'(lambda ()
+;; 		(eglot-ensure)
+;; 		(eldoc-mode 0))))
+
+
 (use-package helm
   :init
   (setq helm-echo-input-in-header-line t)
