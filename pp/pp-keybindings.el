@@ -50,15 +50,12 @@
 (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 
 (evil-leader/set-key
-  "ld" 'lsp-ui-peek-find-definitions 
-  "ls" 'helm-lsp-workspace-symbol
-  "la" 'lsp-execute-code-action
-  "lr" 'lsp-ui-peek-find-references
-  "lR" 'lsp-rename
-  "lh" 'lsp-ui-doc-glance
-  "lf" 'lsp-format-buffer
-  "l[" 'lsp-ui-peek-jump-backward
-  "l]" 'lsp-ui-peek-jump-forward 
+  "ld" 'xref-find-definitions
+  "lr" 'xref-find-references
+  "la" 'eglot-code-action-quickfix
+  "lR" 'eglot-rename
+  "lh" 'eldoc-print-current-symbol-info 
+  "lf" 'eglot-format-buffer
   )
 
 (evil-leader/set-key

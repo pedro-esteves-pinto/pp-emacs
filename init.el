@@ -114,19 +114,14 @@
   (setq company-minimum-prefix-length 1)
   (setq lsp-idle-delay 0.0)
   (setq lsp-file-watch-threshold 20000)
-  (add-hook 'c++-mode-hook 'lsp)
+  ;(add-hook 'c++-mode-hook 'lsp)
   )
 
-;; (use-package eldoc
-;;   :init
-;;   (setq eldoc-echo-area-use-multiline-p nil))
-
-;; (use-package eglot
-;;   :init
-;;   (add-hook 'c++-mode-hook
-;; 	    #'(lambda ()
-;; 		(eglot-ensure)
-;; 		(eldoc-mode 0))))
+(use-package eglot
+  :init
+  (setq eglot-ignored-server-capabilities '(:hoverProvider))
+  (add-hook 'c++-mode-hook #'(lambda () (eglot-ensure)))
+  )
 
 
 (use-package helm
