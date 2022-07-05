@@ -118,7 +118,7 @@
 
 (use-package eglot
   :init
-  (setq eglot-ignored-server-capabilities '(:hoverProvider))
+  (setq eglot-ignored-server-capabilities '(:hoverProvider :signatureHelpProvider))
   )
 
 
