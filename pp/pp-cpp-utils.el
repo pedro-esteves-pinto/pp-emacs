@@ -156,6 +156,8 @@
   (c-set-offset 'innamespace 2) ; Namespace indentation is 0
   (c-set-offset 'inline-open 0 nil)
   (setq indent-tabs-mode nil) ; Use spaces not tabs when indenting
+  (eglot-ensure)
+  (company-mode 1)
   (font-lock-add-keywords 'c++-mode
 			  '(("foreach" . font-lock-keyword-face)
 			    ("nullptr" . font-lock-keyword-face)

@@ -114,13 +114,11 @@
   (setq company-minimum-prefix-length 1)
   (setq lsp-idle-delay 0.0)
   (setq lsp-file-watch-threshold 20000)
-  ;(add-hook 'c++-mode-hook 'lsp)
   )
 
 (use-package eglot
   :init
   (setq eglot-ignored-server-capabilities '(:hoverProvider))
-  (add-hook 'c++-mode-hook #'(lambda () (eglot-ensure)))
   )
 
 
