@@ -152,8 +152,8 @@
   (interactive)
   (c-set-style "stroustrup")
   (modify-syntax-entry ?_ "w")
-  (setq c-basic-offset 3) ; tab size = 3
-  (c-set-offset 'innamespace 0) ; Namespace indentation is 0
+  (setq c-basic-offset 2) ; tab size = 2
+  (c-set-offset 'innamespace 2) ; Namespace indentation is 0
   (c-set-offset 'inline-open 0 nil)
   (setq indent-tabs-mode nil) ; Use spaces not tabs when indenting
   (font-lock-add-keywords 'c++-mode
