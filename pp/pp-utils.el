@@ -11,7 +11,7 @@
   "Return filePath's file content."
   (with-temp-buffer
     (insert-file-contents filePath)
-    (buffer-string)))
+    (buffer-string))) 
 
 ;; string utils
 (defun find-match (str rx-list)
@@ -22,13 +22,12 @@
       (find-match str (cdr rx-list)))))
 
 (defun trim-string (string)
-  "Remove white spaces in beginning and ending of STRING.
-White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
-  (replace-regexp-in-string "\\`[ \t\n]*" "" 
+  "Remove white spaces in beginning and ending of STRING. White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
+  (replace-regexp-in-string "\\'[ \t\n]*" ""
 			    (replace-regexp-in-string "[ \t\n]*\\'" "" string)))
 
 (defun string/starts-with (s arg)
-  "returns non-nil if string S starts with ARG.  Else nil."
+  "returns non-nil if string S starts with ARG. Else nil."
   (cond ((>= (length s) (length arg))
 	 (string-equal (substring s 0 (length arg)) arg))
 	(t nil)))
@@ -46,7 +45,7 @@ White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
 
 (defun chomp (str)
   "Chomp leading and tailing whitespace from STR."
-  (while (string-match "\\`\n+\\|^\\s-+\\|\\s-+$\\|\n+\\'"
+  (while (string-match "\\'\n+\\1^\\s-+\\1\\s-+$\\1\n+\\'"
 		       str)
     (setq str (replace-match "" t t str)))
   str)
@@ -67,7 +66,7 @@ White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
   (interactive)
   (when (equal major-mode 'dired-mode)
     (if (or (not (boundp 'dired-dotfiles-show-p)) dired-dotfiles-show-p) ; if currently showing
-	(progn 
+	(progn
 	  (set (make-local-variable 'dired-dotfiles-show-p) nil)
 	  (message "h")
 	  (dired-mark-files-regexp "^\\\.")
@@ -75,12 +74,11 @@ White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
       (progn (revert-buffer) ; otherwise just revert to re-show
 	     (set (make-local-variable 'dired-dotfiles-show-p) t)))))
 
-
 (defun indent-whole-buffer()
   "Indent whole buffer (using indent-region)."
   (interactive)
-  (normal-mode)
   (save-excursion
+    (normal-mode)
     (mark-whole-buffer)
     (call-interactively 'indent-region))
   (message "%s" "Indented whole buffer."))
@@ -96,7 +94,7 @@ White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
   (interactive)
   (message
    (if (let (window (get-buffer-window (current-buffer)))
-         (set-window-dedicated-p window (not (window-dedicated-p window))))
+	 (set-window-dedicated-p window (not (window-dedicated-p window))))
        "Marking window '%s' as dedicated"
      "Un-dedicating window '%s'")
    (current-buffer)))
@@ -106,40 +104,52 @@ White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
   (interactive)
   (switch-to-buffer "*ASCII*")
   (erase-buffer)
-  (setq buffer-read-only nil)        ;; Not need to edit the content, just read mode (added)
-  (local-set-key "q" 'bury-buffer)   ;; Nice to have the option to bury the buffer (added)
-  (setq lower32 '("nul" "soh" "stx" "etx" "eot" "enq" "ack" "bel"  
+  (setq buffer-read-only nil) ;; Not need to edit the content, just read mode (added)
+  (local-set-key "q" 'bury-buffer) ;; Nice to have the option to bury the buffer (added)
+  (setq lower32 '("nul" "soh" "stx" "etx" "eot" "enq" "ack" "bel"
 		  "bs" "ht" "nl" "vt" "np" "cr" "so" "si"
 		  "dle" "dc1" "dc2" "dc3" "dc4" "nak" "syn" "etb"
 		  "can" "em" "sub" "esc" "fs" "gs" "rs" "us"
 		  ))
   (save-excursion (let ((i -1))
 		    (insert "ASCII characters 0 thru 127.\n\n")
-		    (insert " Hex  Dec  Char|  Hex  Dec  Char|  Hex  Dec  Char|  Hex  Dec  Char\n")
+		    (insert " Hex Dec Char' Hex Dec Charl Hex Dec Charl Hex Dec Char\n")
 		    (while (< i 31)
-		      (insert (format "%4x %4d %4s | %4x %4d %4s | %4x %4d %4s | %4x %4d %4s\n"
-				      (setq i (+ 1  i)) i (elt lower32 i)
+		      (insert (format "%4x %4d %4s 1 %4x %4d %4s 1 %4x %4d %4s 1 %4x %4d %4s\n"
+				      (setq i (+ 1 i)) i (elt lower32 i)
 				      (setq i (+ 32 i)) i (single-key-description i)
 				      (setq i (+ 32 i)) i (single-key-description i)
 				      (setq i (+ 32 i)) i (single-key-description i)))
-		      (setq i (- i 96))))))
-
-
-;; --------------------------------------------------------------------------------
+		      (setq i (- i 96)))))) 
 
 (defun locate-last-dominating-file (from-dir file)
-  (message (format "~a ~a" from-dir file))
+  (message (format "%s %s" from-dir file))
   (if (string= (file-truename from-dir) "/")
       nil
-  (let ((d (locate-dominating-file from-dir file)))
-    (if (and d (not (locate-dominating-file (concat d "/..") file)))
-	d
-      (locate-last-dominating-file (concat d "/..") file)))))
-;; --------------------------------------------------------------------------------
+    (let ((d (locate-dominating-file from-dir file)))
+      (if (and d (not (locate-dominating-file (concat d "/..") file)))
+	  (locate-last-dominating-file (concat d "/..") file)))))
 
-
-(defun show-file-name ()
+(defun pp-show-file-name ()
   "Show the full path file name in the minibuffer."
   (interactive)
-  (kill-new (buffer-file-name))
-  (message (buffer-file-name)))
+  (kill-new (buffer-file-name)) (message (buffer-file-name))) 
+
+(defun pp-copy-file-name-as-org-link-to-clipboard ()
+  "Copy the current buffer file name to the clipboard "
+  (interactive)
+  (let ((filename (if (equal major-mode 'dired-mode)
+		      default-directory
+		    (buffer-file-name))))
+    (when filename
+      (let* ((clean-filename (file-name-nondirectory filename))
+	     (org-link (format "[[file+emacs:%s][%s]]"
+			       filename (file-name-sans-extension clean-filename))))
+	(kill-new org-link)
+	(message "Copied buffer file name 196s1 to the clipboard." clean-filename)))))
+
+
+(defun pp-copy-region-to-pasteboard-file (beg end &optional type register yank-handler) (write-region beg end "~/.pp-pasteboard" t)
+       (write-region "\n{{{ END_OF_PASTE_BLOCK }}}\n" nil "-/.pp-pasteboard" 'append))
+
+(advice-add 'evil-yank :after 'pp-copy-region-to-pasteboard-file) 
