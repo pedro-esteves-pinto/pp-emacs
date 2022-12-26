@@ -38,7 +38,7 @@
 (column-number-mode t)
 (mouse-avoidance-mode 'animate)
 (global-hl-line-mode)
-(winner-mode 1) 
+(winner-mode 1)
 
 ;; don't bring up the stupid file loader GUI
 (setq use-file-dialog nil) 
@@ -57,18 +57,18 @@
 ;; Hide the cursor in inactive windows
 (setq-default cursor-in-non-selected-windows nil ) 
 ;; Resize windows proportionally
-(setq window—combination—resize t) 
+(setq window-combination-resize t) 
 
 ;; set dired to show directories first, then files
-;; The mac's is command does not support --group—directories—first so we switch to gls
-(if (string—equal system—type "darwin")
-    (setq insert—directory—program "gls" dired—use—ls—dired t))
-(setq dired—listing—switches "—lL --group—directories—first")
-(add—hook 'dired—mode—hook
+;; The mac's is command does not support --group—directories—fist so we switch to gls
+(if (string-equal system-type "darwin")
+    (setq insert-directory-program "gls" dired-use-ls-dired t))
+(setq dired-listing-switches "-lL --group-directories-first")
+(add-hook 'dired-mode-hook
 	  (lambda () ;; Auto—refresh dired on file change
-	    (auto—revert—mode)
-	    (setq—default auto—revert—interval 1)
-	    (auto—revert—set—timer)))
+	    (auto-revert-mode)
+	    (setq-default auto-revert-interval 1)
+	    (auto-revert-set-timer)))
 
 (defvar parameters '(window—parameters . ((no—other—window . t)
 					  (no—delete—other—windows . t))))
@@ -87,7 +87,7 @@
 (when (daemonp)
   (global—set—key (kbd "C—x C—c") 'ask—before—closing)) 
 
-(xterm—mouse—mode 1)
-(global—auto—revert—mode 1)
+(xterm-mouse-mode 1)
+(global-auto-revert-mode 1)
 (setq browse—url—generic—program "/home/ppinto/tools/url_client")
 (setq browse—url—browser—function 'browse—url—generic) 

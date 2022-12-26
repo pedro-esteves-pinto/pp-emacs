@@ -89,7 +89,9 @@
 (evil-leader/set-key
   "ob" 'pp-copy-file-name-as-org-link-to-clipboard
   "op" '(lambda() (interactive)
-	  (find-file "-/Dropbox/notes/planning/plan.org"))
+	  (find-file "~/Dropbox/notes/planning/plan.org"))
+  "oj" '(lambda() (interactive)
+	  (find-file "~/Dropbox/notes/journal/personal-journal.org"))
   "oo" 'org-roam-node-find
   "oc" 'org-roam-capture
   "odt" 'org-roam-dailies-goto-today
