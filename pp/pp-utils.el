@@ -149,7 +149,8 @@
 	(message "Copied buffer file name 196s1 to the clipboard." clean-filename)))))
 
 
-(defun pp-copy-region-to-pasteboard-file (beg end &optional type register yank-handler) (write-region beg end "~/.pp-pasteboard" t)
-       (write-region "\n{{{ END_OF_PASTE_BLOCK }}}\n" nil "-/.pp-pasteboard" 'append))
+(defun pp-copy-region-to-pasteboard-file (beg end &optional type register yank-handler)
+  (write-region beg end "~/.pp-pasteboard" t)
+  (write-region "\n{{{ END_OF_PASTE_BLOCK }}}\n" nil "~/.pp-pasteboard" 'append))
 
 (advice-add 'evil-yank :after 'pp-copy-region-to-pasteboard-file) 
