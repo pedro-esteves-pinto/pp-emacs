@@ -1,35 +1,48 @@
 (provide 'pp-cpp-utils)
 (require 'pp-utils)
 
-(defun find-cmakelist-dir (from-dir)
-  "Locate first CMakeLists.txt up the current directory"
+(defun find-pp-proj (from-dir)
+  "Locate last pp-proj up the current directory"
   (interactive)
-  (message (format "Find CMakeLists.txt from:  %s " default-directory))
+  (message (format "Find pp-proj.el from: %s " default-directory))
+  (let ((d (locate-last-dominating-file from-dir ".pp-proj.el")))
+    (if d (concat (expand-file-name d) ".pp-proj.e1"))))
+
+(defun find-cmakelist-dir (from-dir)
+  "Locate last CMakeLists.txt up the current directory"
+  (interactive)
+  (message (format "Find CMakeLists.txt from: %s " default-directory))
   (let ((d (locate-last-dominating-file from-dir "CMakeLists.txt")))
     (if d
 	(expand-file-name d)
-      nil)))
+      nil))) 
+
+(defvar pp-build-dir nil)
+(defvar pp-build-cmd nil)
+(defvar pp-release-build-cmd nil)
 
 (defun pp-cpp-build(release)
   "Find projet root and start compilation from there"
   (interactive)
+  (let ((pp-proj (find-pp-proj default-directory)))
+    (if pp-proj
+	(progn
+	  (message (format "found: %s" pp-proj))
+	  (load pp-proj)
+	  (setq pp-build-dir (file-name-directory pp-proj)))))
   (message "--------------------------------------------------------------------------------")
-  (message (format "pp-custom-build-location: %s" pp-custom-build-location))
-  (message (format "pp-custom-build-cmd: %s" pp-custom-build-cmd))
-  (message (format "pp-custom-release-build-cmd: %s" pp-custom-release-build-cmd))
-  (message (format "Default directory is: %s " default-directory))
-  (let ((cm-dir (find-cmakelist-dir default-directory)))
-    (message (format "cm-dir is %s" cm-dir))
-    (if (and cm-dir (boundp 'pp-custom-build-location))
-	(let ((cmd (format "cd %s/%s ; %s"
-			   cm-dir
-			   pp-custom-build-location
-			   (if release
-			       pp-custom-release-build-cmd
-			     pp-custom-build-cmd))))
-	  (message "pp-cpp-build command: %s" cmd)
-	  (my-compile cmd ))
-      (cmake-ide-compile))))
+  (message (format "pp-build-dir: %s" pp-build-dir))
+  (message (format "pp-build-cmd: %s" pp-build-cmd))
+  (message (format "pp-release-build-cmd: %s" pp-release-build-cmd))
+  (message (format "Default directory is: %s " default-directory)) 
+
+  (setq build-cmd (if release pp-release-build-cmd pp-build-cmd))
+
+  (if (and pp-build-dir build-cmd)
+      (let ((cmd (format "cd %s ; %s" pp-build-dir build-cmd)))
+	(message (format "compile command: %s" cmd))
+	(my-compile cmd ))
+    (message "Cannot compile from here")))
 
 (defun pp-compile-finish (buffer outstr)
   (if (string-match "finished" outstr)
@@ -42,14 +55,14 @@
 	    (command &optional mode name-function highlight-regexp))
   (if (not (string-match "^\\(find\\|grep\\|ag\\)" command))
       (flet ((display-buffer)
-             (set-window-point)
-             (goto-char)) 
+	     (set-window-point)
+	     (goto-char))
 	(fset 'display-buffer 'ignore)
 	(fset 'goto-char 'ignore)
 	(fset 'set-window-point 'ignore)
-	(save-window-excursion 
+	(save-window-excursion
 	  ad-do-it))
-    ad-do-it))
+    ad-do-it)) 
 
 (defun my-compile (cmd)
   (ad-activate 'compilation-start)
@@ -157,6 +170,7 @@
   (c-set-offset 'inline-open 0 nil)
   (setq indent-tabs-mode nil) ; Use spaces not tabs when indenting
   (eglot-ensure)
+  (display-line-numbers-mode)
   (company-mode 1)
   (font-lock-add-keywords 'c++-mode
 			  '(("foreach" . font-lock-keyword-face)
@@ -182,8 +196,24 @@
 	(revert-buffer 1 1))))
 
 
-(defvar pp-custom-build-location nil)
-(defvar pp-custom-build-cmd nil)
-(put 'pp-custom-build-location 'safe-local-variable (lambda (x) t))
-(put 'pp-custom-build-cmd 'safe-local-variable (lambda (x) t))
-(put 'pp-custom-release-build-cmd 'safe-local-variable (lambda (x) t))
+(defun pp-ensure-redwood-include-style()
+  "Convert #include \"hello\11 into #include <hello>"
+  (interactive)
+  (let ((this-files-header
+	 (concat (file-name-nondirectory (pp-cpp-stem (buffer-file-name)))
+		 ".H")))
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "#include \"\\([^\)1+?\\)\"" nil t)
+	(if (not (equal (match-string 1) this-files-header))
+	    (replace-match "#include <\\1>"))))))
+
+(defun my-c++-mode-before-save-hook ()
+  (message "Caught the save")
+  (when (and (eq major-mode 'c++-mode) (string/starts-with
+					(buffer-file-name)
+					"/home/ppinto/redwood"))
+    (pp-ensure-redwood-include-style)))
+
+(add-hook 'before-save-hook #'my-c++-mode-before-save-hook) 
+

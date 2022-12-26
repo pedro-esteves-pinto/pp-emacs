@@ -5,11 +5,16 @@
 
 (provide 'pp-avy)
 
+(defvar last-repo nil)
+
 (defun repo-path (for-file)
   (let ((rr (locate-dominating-file for-file ".git")))
     (if rr
-	(expand-file-name rr)
-      nil)))
+	(progn
+	  (message (format "pp: found repo: %s" (expand-file-name rr)))
+	  (setq last-repo (expand-file-name rr)))
+      (message (format "pp: no repo here. defaulting to: %s" last-repo)))
+    last-repo))
 
 (defun repo-name (for-file)
   (let ((rp (repo-path for-file)))
@@ -50,7 +55,7 @@
 (defun get-includes (repo-root)
   (split-string 
    (shell-command-to-string
-    (format "%s/tools/get_includes.sh" repo-root))))
+    (format "get_includes" repo-root))))
 
 (defun get-good-bms()
   (let ((bad-bms '("\\RTags_")))
@@ -75,12 +80,17 @@
 					bad-buffers))
 			  (buffer-list)))))
 
+(defun format-repo-candidate (path)
+  (let ((file (file-name-nondirectory path))
+	(dir (file-name-directory path)))
+    (format "%-40s %s" file (if dir (substring dir 0 -1) "." ))))
+
 (defun repo-candidates ()
   (let ((repo (current-repo)))
     (if repo
 	(mapcar (lambda (f)
-		  (cons (file-name-nondirectory f)
-			(format "%s/%s" repo f)))
+		  (cons (format-repo-candidate f)
+			(concat repo f)))
 		(get-repo-manifest repo)))))
 
 (defun buffer-candidates()
@@ -91,19 +101,54 @@
 	    (cons b 'bookmark))
 	  (get-good-bms)))
 
-(defun get-all-choices ()
-  (let ((tree
-	 (avl-tree-create '(lambda (a b) (string< (car a) (car b))))))
-    (mapc (lambda (f) (avl-tree-enter tree f)) (buffer-candidates))
-    (mapc (lambda (f) (avl-tree-enter tree f)) (bm-candidates))
-    (mapc (lambda (f) (avl-tree-enter tree f)) (repo-candidates))
-    (avl-tree-flatten tree)))
+
+(defun merge-candidates (buffer-candidates bm-candidates repo-candidates)
+  (let ((tree (avl-tree-create 'string<))
+	(result '()))
+    (dolist (bp buffer-candidates)
+      (let ((buffer (cdr bp)))
+	(if (buffer-file-name buffer)
+	    (avl-tree-enter tree (buffer-file-name buffer)))
+	(push bp result)))
+
+    (dolist (bmp bm-candidates)
+      (let ((bm (car bmp)))
+	(if (and (bookmark-get-filename bm)
+		 (not (avl-tree-member tree (bookmark-get-filename bm))))
+	    (progn
+	      (avl-tree-enter tree (bookmark-get-filename bm))
+	      (push bmp result)))))
+
+    (dolist (repop repo-candidates)
+      (let ((path (cdr repop)))
+	(if (not (avl-tree-member tree path))
+	    (progn
+	      (avl-tree-enter tree path)
+	      (push repop result)))))
+
+    (sort result
+	  #'(lambda (e1 e2)
+	      (let ((cdr1 (cdr e1))
+		    (cdr2 (cdr e2)))
+		(cond
+		 ;; bookmark
+		 ((and (equal cdr1 'bookmark) (equal cdr2 'bookmark)) (string< (car e1) (car e2)))
+		 ((and (equal cdr1 'bookmark) (bufferp cdr2)) t)
+		 ((and (equal cdr1 'bookmark) (stringp cdr2)) t)
+		 ;; buffer
+		 ((and (bufferp cdr1) (equal cdr2 'bookmark)) nil)
+		 ((and (bufferp cdr1) (bufferp cdr2)) (string< (car e1) (car e2)))
+		 ((and (bufferp cdr1) (stringp cdr2)) t)
+		 ;; git
+		 ((and (stringp cdr1) (stringp cdr2) (string< cdr1 cdr2)))
+		 ((and (stringp cdr1) (equal cdr2 'bookmark)) nil)
+		 ((and (stringp cdr1) (bufferp cdr2)) nil)))))))
 
 
 (defun pp-avy-switch()
   (interactive)
   (ivy-read ": "
-	    (get-all-choices)
+	    (merge-candidates (buffer-candidates) (bm-candidates) (repo-candidates))
 	    :action (lambda (c)
 		      (let ((target (cdr c)))
 			(if (bufferp target)
@@ -113,14 +158,12 @@
 			    (find-file target)))))))
 
 (defun get-pretty-includes()
-  (mapcar (lambda (f)
-	    (cons (substring f 1 -1) f))
-	  (get-includes (current-repo))))
+  (get-include (current-repo)))
 
 (defun pp-avy-include()
   (interactive)
   (ivy-read "Include: "
 	    (get-pretty-includes)
 	    :action (lambda (file)
-		      (insert (format "#include %s\n" (cdr file))))))
+		      (insert (format "#include <%s>\n" (cdr file))))))
 

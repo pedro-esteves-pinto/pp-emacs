@@ -15,6 +15,8 @@
 (straight-use-package 'use-package)
 ;; End straight.el
 
+(setq package-enable-at-startup nil)
+
 (use-package evil
   :init
   (setq evil-want-integration t)
@@ -22,7 +24,9 @@
   (setq evil-want-C-i-jump nil)
   ;; See https://github.com/emacs-evil/evil-collection/issues/60 for more details.
   (setq evil-want-keybinding nil)
-  :config (evil-mode 1))
+  :config
+  (add-to-list 'evil-insert-state-modes 'shell-mode)
+  (evil-mode 1))
 
 (use-package evil-collection
   :after evil
@@ -52,8 +56,8 @@
   (ivy-mode 1))
 
 (use-package which-key
-   :init
-   (which-key-mode))
+  :init
+  (which-key-mode))
 
 (use-package org
   :init
@@ -66,60 +70,57 @@
   (setq org-return-follows-link 1)
   (setq org-startup-truncated nil)
   (setq org-agenda-span 14)
+  (setq org-capture-templates '(("j" "Journal" plain
+				 (file+olp+datetree "~/Dropbox/notes/journal/personal-journal.org")
+				 "%i%?")
+				("n" "Note" entry
+				 (file+headline "~/Dropbox/notes/planning/plan.org" "Inbox")
+				 "* %?\n %i")))
   (add-hook 'org-capture-mode-hook 'evil-insert-state)
   (add-hook 'org-mode-hook 'turn-on-flyspell)
   ;; dot
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((shell . t) (dot . t)))
-  ) 
+  )
 
 (use-package org-roam
   :init
   (setq org-roam-v2-ack t)
   :custom
-  (org-roam-directory "~/org-roam")
+  (org-roam-directory "~/Dropbox/notes/org-roam")
   :config
   (org-roam-db-autosync-mode))
 
-(use-package magit)
+(use-package magit
+  :init
+  (setq magit-display-buffer-function
+	(lambda (buffer)
+	  (display-buffer
+	   buffer
+	   (cond ((and (derived-mode-p 'magit-mode)
+		       (eq (with-current-buffer buffer major-mode)
+			   'magit-status-mode))
+		  nil)
+		 ((memq (with-current-buffer buffer major-mode)
+			'(magit-process-mode
+			  magit-revision-mode
+			  magit-diff-mode
+			  magit-stash-mode)) 
+		  nil)
+		 (t '(display-buffer-same-window)))))))
+
 (use-package ag)
 (use-package buffer-move)
 (use-package cmake-mode)
 (use-package yaml-mode)
 (use-package ace-window)
 
-(use-package solarized-theme
-  :init
-  (setq solarized-scale-org-headlines nil)
-  ;; Avoid all font-size changes
-  (setq solarized-height-minus-1 1.0)
-  (setq solarized-height-plus-1 1.0)
-  (setq solarized-height-plus-2 1.0)
-  (setq solarized-height-plus-3 1.0)
-  (setq solarized-height-plus-4 1.0))
-
-
-(use-package lsp-mode :ensure t
-  :init
-  (setq lsp-keymap-prefix "C-c C-l")
-  (setq gc-cons-threshold 100000000)
-  (setq read-process-output-max (* 1024 1024))
-  (setq lsp-enable-symbol-highlighting nil)
-  (setq lsp-headerline-breadcrumb-enable nil)
-  (setq lsp-ui-doc-show-with-cursor nil)
-  (setq lsp-ui-doc-show-with-mouse nil)
-  (setq treemacs-space-between-root-nodes nil)
-  (setq company-idle-delay 0.2)
-  (setq company-minimum-prefix-length 1)
-  (setq lsp-idle-delay 0.0)
-  (setq lsp-file-watch-threshold 20000)
-  )
-
 (use-package eglot
   :init
-  (setq eglot-ignored-server-capabilities '(:hoverProvider :signatureHelpProvider))
-  )
+  (setq eglot-server-programs '((python-mode . ("pyright-langserver" "--stdio"))))
+  (setq eglot-ignored-server-capabilities '(:hoverProvider :signatureHelpProvider)))
+
 
 
 (use-package helm
@@ -137,29 +138,56 @@
   (add-hook 'helm-minibuffer-set-up-hook 'helm-hide-minibuffer-maybe))
 
 (use-package flycheck)
-(use-package vterm)
+
+(use-package vterm
+  :config
+  (evil-set-initial-state 'vterm-mode 'emacs))
+
 (use-package company)
+
+(use-package beacon
+  :config
+  (beacon-mode 1))
+
+(use-package tramp
+  :init
+  (setq vc-handled-backends nil)
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
+  (setq tramp-verbose 6))
+
+(use-package origami
+  :config
+  (add-hook 'prog-mode-hook 'origami-mode))
+
+(use-package standard-themes
+  :init
+  (setq custom-safe-themes t)
+  :config
+  (load-theme 'standard-light)
+  (define-key global-map (kbd "<f9>") #'standard-themes-toggle))
+
+(use-package dimmer
+  :config
+  (setq dimmer-fraction 0.5)
+  (dimmer-mode 1))
+
+(use-package darkroom)
+
+(use-package bash-completion
+  :config
+  (bash-completion-setup))
+
+(use-package free-keys)
+
+(use-package nano-theme)
 
 ;; My own packages
 (add-to-list 'load-path (concat user-emacs-directory "pp"))
-
 (require 'pp-cpp-utils)
+(require 'pp-python-utils)
 (require 'pp-misc-options)
 (require 'pp-avy)  
 (require 'pp-keybindings)
 
 ;; Show home by default
 (dired "~")
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(helm-minibuffer-history-key "M-p")
- '(safe-local-variable-values '((bodas . 1))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
