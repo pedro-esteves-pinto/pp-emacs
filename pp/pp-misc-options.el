@@ -15,6 +15,7 @@
 				))
 
 (setq menlo "Menlo:pixelsize=12:weight=normal:slant=normal:width=normal:spacing=100:scalable=true:antialias=true:hinting=true")
+(set-face-attribute 'default nil :height 120)
 (setq myfont menlo)
 (if myfont
     (setq default-frame-alist (list (cons 'font myfont ))))

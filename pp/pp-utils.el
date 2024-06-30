@@ -1,6 +1,5 @@
 (provide 'pp-utils)
 (require 'bookmark)
-(require 'pulse)
 (require 'ansi-color)
 (require 'cl)
 
@@ -83,12 +82,6 @@
     (call-interactively 'indent-region))
   (message "%s" "Indented whole buffer."))
 
-;; pulse target window when switching
-(setq pulse-iterations 2)
-(setq pulse-delay .05)
-(defun pulse-window ()
-  (pulse-momentary-highlight-region (point-min) (point-max)))
-
 (defun pp-toggle-window-dedicated ()
   "Toggle whether or not the current window is dedicated to its buffer"
   (interactive)
@@ -130,6 +123,57 @@
       (if (and d (not (locate-dominating-file (concat d "/..") file)))
 	  (locate-last-dominating-file (concat d "/..") file)))))
 
+
+
+(defvar last-repo nil)
+
+(defun repo-path (for-file)
+  (let ((rr (locate-dominating-file for-file ".git")))
+    (if rr
+	(progn
+	  (message (format "pp: found repo: %s" (expand-file-name rr)))
+	  (setq last-repo (expand-file-name rr)))
+      (message (format "pp: no repo here. defaulting to: %s" last-repo)))
+    last-repo))
+
+(defun repo-name (for-file)
+  (let ((rp (repo-path for-file)))
+    (if rp
+	(file-name-nondirectory (directory-file-name rp))
+      nil)))
+
+(defun get-repo-version (rp)
+  (chomp (shell-command-to-string
+	  (if (file-exists-p (concat rp "/.git"))
+	      (format "cd %s ; git log -n 1 | head -n 1" rp)
+	    nil))))
+
+(defun get-repo-manifest-from-disk (repo)
+  (if (file-exists-p (concat repo "/.git"))
+      (let ((d default-directory) (r '()))
+	(setq default-directory repo)
+	(with-temp-buffer
+	  (process-file "git" nil t nil "ls-files")
+	  (setq r (split-string (buffer-string))))
+	(setq default-directory d)
+	r)))
+
+(setq repo-cache (make-hash-table :test 'equal))
+
+(defun get-repo-manifest (repo)
+  (let ((rv (get-repo-version repo)))
+    (let ((cached (gethash repo repo-cache nil)))
+      (if (and cached (string= (car cached) rv))
+	  (cdr cached)
+	(let ((col (get-repo-manifest-from-disk repo)))
+	  (puthash repo (cons rv col) repo-cache)
+	  col)))))
+
+(defun current-repo ()
+  (repo-path default-directory))
+
+
+
 (defun pp-show-file-name ()
   "Show the full path file name in the minibuffer."
   (interactive)
@@ -154,3 +198,27 @@
   (write-region "\n{{{ END_OF_PASTE_BLOCK }}}\n" nil "~/.pp-pasteboard" 'append))
 
 (advice-add 'evil-yank :after 'pp-copy-region-to-pasteboard-file) 
+
+(defvar pp-sync-target nil)
+
+(defun pp-sync()
+  (let ((d (locate-dominating-file default-directory ".pp-sync.el")))
+    (progn
+      (load pp-sync)
+      (let* ((relative-file-path (file-relative-name (buffer-file-name) d))
+	     (cmd (format "scp %s %s" relative-file-path
+			  (format "%s/%s" pp-sync-target relative-file-path)))
+	     (default-directory d))
+	(shell-command cmd)
+	))))
+
+(add-hook 'after-save-hook 'pp-sync)
+
+(defun pp-remote-shell (target)
+  (with-current-buffer (vterm target)'
+    (vterm-send-string (format "ssh -t %s \"TERM=xterm && bash -l\"" target))
+    (vterm-send-return)
+    (vterm-send-string "set -o vi")
+    (vterm-send-return)))
+
+	     

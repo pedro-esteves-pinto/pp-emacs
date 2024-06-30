@@ -165,10 +165,6 @@
 
 (use-package company)
 
-(use-package beacon
-  :config
-  (beacon-mode 1))
-
 (use-package tramp
   :init
   (setq vc-handled-backends nil)

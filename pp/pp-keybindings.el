@@ -42,7 +42,10 @@
   )
 
 (evil-leader/set-key
-  "m" 'magit-file-dispatch) 
+  "mm" 'magit-status
+  "ml" 'magit-log-buffer-file
+  "md" 'magit-diff-buffer-file
+  "mb" 'vc-annotate) 
 
 (evil-leader/set-key-for-mode 'c++-mode
   "f" 'c-mark-function
@@ -66,9 +69,7 @@
 		(shell-command (format "black %s" buffer-file-name))
 		(revert-buffer 1 1))
 	   (if (equal major-mode c++-mode)
-	       (progn
-		 (pp-ensure-redwood-include-style)
-		 (eglot-format (region-beginning) (region-end))))))
+		 (eglot-format (region-beginning) (region-end)))))
   "lt" 'eglot-find-typeDefinition
   )
 
@@ -87,19 +88,10 @@
   "tp" 'tab-previous)
 
 (evil-leader/set-key
-  "ob" 'pp-copy-file-name-as-org-link-to-clipboard
-  "op" '(lambda() (interactive)
-	  (find-file "~/Dropbox/notes/planning/plan.org"))
-  "oj" '(lambda() (interactive)
-	  (find-file "~/Dropbox/notes/journal/personal-journal.org"))
-  "oo" 'org-roam-node-find
-  "oc" 'org-roam-capture
-  "odt" 'org-roam-dailies-goto-today
-  "odp" 'org-roam-dailies-goto-previous-note
-  "odn" 'org-roam-dailies-goto-next-note
-  "ol" 'org-roam-node-insert)
+  "cc" 'denote
+  "cd" 'denote-subdirectory
+  "cl" 'denote-link)
 
-(global-set-key (kbd "C-1") 'org-roam-node-insert)
 
 ;; git
 (evil-leader/set-key "RET" 'magit-status)
@@ -119,6 +111,8 @@
 (global-set-key (kbd "M-j") 'forward-paragraph)
 (global-set-key (kbd "M-k") 'backward-paragraph)
 (global-set-key (kbd "M-RET") 'newline-and-indent)
+(global-set-key (kbd "<f12>") 'pp-avy-switch)
+(global-set-key (kbd "S-<f12>") 'vterm-toggle)
 (global-set-key (kbd "<f13>") 'evil-goto-line)
 
 (global-set-key (kbd "<M-left>") 'evil-jump-backward)

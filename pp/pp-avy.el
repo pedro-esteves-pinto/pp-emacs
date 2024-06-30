@@ -1,61 +1,41 @@
 (require 'ivy)
 (require 'avy)
-(require 'pp-utils)
 (require 'cl)
+(require 'avl-tree)
+(require 'denote)
+
+(require 'pp-utils)
+(require 'pp-pulse)
 
 (provide 'pp-avy)
 
-(defvar last-repo nil)
+(defvar-local last-visited-time nil "The time when this buffer was last visited")
 
-(defun repo-path (for-file)
-  (let ((rr (locate-dominating-file for-file ".git")))
-    (if rr
-	(progn
-	  (message (format "pp: found repo: %s" (expand-file-name rr)))
-	  (setq last-repo (expand-file-name rr)))
-      (message (format "pp: no repo here. defaulting to: %s" last-repo)))
-    last-repo))
+(defun update-last-visited-time ()
+  "Update the last visited time of a buffer"
+  (setq last-visited-time (current-time)))
 
-(defun repo-name (for-file)
-  (let ((rp (repo-path for-file)))
-    (if rp
-	(file-name-nondirectory (directory-file-name rp))
-      nil)))
+(add-hook 'buffer-list-update-hook 'update-last-visited-time)
 
-(defun get-repo-version (rp)
-  (chomp (shell-command-to-string
-	  (if (file-exists-p (concat rp "/.git"))
-	      (format "cd %s ; git log -n 1 | head -n 1" rp)
-	    nil))))
+(defun get-last-visited-time (buffer-name)
+  (if (get-buffer buffer-name)
+      (with-current-buffer buffer-name
+	(if last-visited-time
+	    last-visited-time
+	  nil))))
 
-(defun get-repo-manifest-from-disk (repo)
-  (if (file-exists-p (concat repo "/.git"))
-      (let ((d default-directory) (r '()))
-	(setq default-directory repo)
-	(with-temp-buffer
-	  (process-file "git" nil t nil "ls-files")
-	  (setq r (split-string (buffer-string))))
-	(setq default-directory d)
-	r)))
-
-(setq repo-cache (make-hash-table :test 'equal))
-
-(defun get-repo-manifest (repo)
-  (let ((rv (get-repo-version repo)))
-    (let ((cached (gethash repo repo-cache nil)))
-      (if (and cached (string= (car cached) rv))
-	  (cdr cached)
-	(let ((col (get-repo-manifest-from-disk repo)))
-	  (puthash repo (cons rv col) repo-cache)
-	  col)))))
-
-(defun current-repo ()
-  (repo-path default-directory))
-
-(defun get-includes (repo-root)
-  (split-string 
-   (shell-command-to-string
-    (format "get_includes" repo-root))))
+(defun compare-buffers (buffer1 buffer2)
+  (if (and (get-last-visited-time buffer1)
+	   (get-last-visited-time buffer2))
+      (time-less-p (get-last-visited-time buffer2)
+		   (get-last-visited-time buffer1))
+    (if (get-last-visited-time buffer1)
+	1
+      (if (get-last-visited-time buffer22)
+	  0
+	(string< (buffer-name buffer1)
+		 (buffer-name buffer2))))))
+	   
 
 (defun get-good-bms()
   (let ((bad-bms '("\\RTags_")))
@@ -76,14 +56,15 @@
     (mapcar (lambda (b)
 	      (cons (buffer-name b) b))
 	    (cl-remove-if (lambda (b)
-			    (find-match (buffer-name b)
-					bad-buffers))
+			    (or (eq (current-buffer) b)
+				(find-match (buffer-name b)
+					    bad-buffers)))
 			  (buffer-list)))))
 
 (defun format-repo-candidate (path)
   (let ((file (file-name-nondirectory path))
 	(dir (file-name-directory path)))
-    (format "%-40s %s" file (if dir (substring dir 0 -1) "." ))))
+    (format "%-40s %s" file (if dir (substring dir 0 -1) "."))))
 
 (defun repo-candidates ()
   (let ((repo (current-repo)))
@@ -92,6 +73,12 @@
 		  (cons (format-repo-candidate f)
 			(concat repo f)))
 		(get-repo-manifest repo)))))
+
+(defun denote-candidates()
+  (mapcar (lambda (denote-file)
+	    (cons (format "Note: %s" (denote-retrieve-filename-title denote-file))
+		  denote-file))
+	  (denote-directory-text-only-files)))
 
 (defun buffer-candidates()
   (get-good-buffers))
@@ -102,7 +89,7 @@
 	  (get-good-bms)))
 
 
-(defun merge-candidates (buffer-candidates bm-candidates repo-candidates)
+(defun merge-candidates (buffer-candidates bm-candidates repo-candidates denote-candidates)
   (let ((tree (avl-tree-create 'string<))
 	(result '()))
     (dolist (bp buffer-candidates)
@@ -137,33 +124,26 @@
 		 ((and (equal cdr1 'bookmark) (stringp cdr2)) t)
 		 ;; buffer
 		 ((and (bufferp cdr1) (equal cdr2 'bookmark)) nil)
-		 ((and (bufferp cdr1) (bufferp cdr2)) (string< (car e1) (car e2)))
+		 ((and (bufferp cdr1) (bufferp cdr2)) (compare-buffers cdr1 cdr2 ))
 		 ((and (bufferp cdr1) (stringp cdr2)) t)
 		 ;; git
 		 ((and (stringp cdr1) (stringp cdr2) (string< cdr1 cdr2)))
 		 ((and (stringp cdr1) (equal cdr2 'bookmark)) nil)
-		 ((and (stringp cdr1) (bufferp cdr2)) nil)))))))
+		 ((and (stringp cdr1) (bufferp cdr2)) nil)))))
+  (append result denote-candidates)
+  ))
 
 
 (defun pp-avy-switch()
   (interactive)
-  (ivy-read ": "
-	    (merge-candidates (buffer-candidates) (bm-candidates) (repo-candidates))
-	    :action (lambda (c)
-		      (let ((target (cdr c)))
-			(if (bufferp target)
-			    (switch-to-buffer target)
-			  (if (equal target 'bookmark)
-			      (bookmark-jump (car c))
-			    (find-file target)))))))
-
-(defun get-pretty-includes()
-  (get-include (current-repo)))
-
-(defun pp-avy-include()
-  (interactive)
-  (ivy-read "Include: "
-	    (get-pretty-includes)
-	    :action (lambda (file)
-		      (insert (format "#include <%s>\n" (cdr file))))))
+  (unless (eq last-command 'pp-avy-switch)
+    (ivy-read ": "
+	      (merge-candidates (buffer-candidates) (bm-candidates) (repo-candidates) (denote-candidates))
+	      :action (lambda (c)
+			(let ((target (cdr c)))
+			  (if (bufferp target)
+			      (switch-to-buffer target)
+			    (if (equal target 'bookmark)
+				(bookmark-jump (car c))
+			      (find-file target))))))))
 

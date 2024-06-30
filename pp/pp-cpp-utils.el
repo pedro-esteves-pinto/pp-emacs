@@ -186,34 +186,4 @@
 
 (add-hook 'c++-mode-hook (lambda () (my-c++-setup)))
 
-(defun clang-format()
-  "Run clang-format on current file"
-  (interactive)
-  (if (string-match "\\.\\(cpp\\|cc\\|h\\)$" buffer-file-name )
-      (progn
-	(save-buffer)
-	(shell-command (format "clang-format -style=file -i %s" buffer-file-name))
-	(revert-buffer 1 1))))
-
-
-(defun pp-ensure-redwood-include-style()
-  "Convert #include \"hello\11 into #include <hello>"
-  (interactive)
-  (let ((this-files-header
-	 (concat (file-name-nondirectory (pp-cpp-stem (buffer-file-name)))
-		 ".H")))
-    (save-excursion
-      (goto-char (point-min))
-      (while (re-search-forward "#include \"\\([^\)1+?\\)\"" nil t)
-	(if (not (equal (match-string 1) this-files-header))
-	    (replace-match "#include <\\1>"))))))
-
-(defun my-c++-mode-before-save-hook ()
-  (message "Caught the save")
-  (when (and (eq major-mode 'c++-mode) (string/starts-with
-					(buffer-file-name)
-					"/home/ppinto/redwood"))
-    (pp-ensure-redwood-include-style)))
-
-(add-hook 'before-save-hook #'my-c++-mode-before-save-hook) 
 
