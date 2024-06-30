@@ -2,16 +2,11 @@
 (provide 'pp-misc-options) 
 (load-theme 'nano-light) 
 
-					;(load-theme 'doom-ayu-mirage)
-					;(load-theme 'modus-operandi)
-					;(load-theme 'doom-solarized-dark)
-					;(load-theme 'doom-ir-black) 
-
 (setq-default mode-line-format (list
 				" "
 				mode-line-modified " "
 				" %e %b "
-				" l:%1 c: %c            "
+				" l:%1 c:%c %p           "
 				'(:eval (cond
 					 (( eq evil-state 'visual) "V")
 					 (( eq evil-state 'normal) "N")
@@ -19,20 +14,19 @@
 					 (t "*")))
 				))
 
-(setq myfont nil)
+(setq menlo "Menlo:pixelsize=12:weight=normal:slant=normal:width=normal:spacing=100:scalable=true:antialias=true:hinting=true")
+(setq myfont menlo)
 (if myfont
     (setq default-frame-alist (list (cons 'font myfont ))))
-
-(if (string-equal system-type "darwin")
-    (set-face-attribute 'default nil :height 150))
 
 (blink-cursor-mode 0)
 (setq initial-scratch-message "")
 (setq inhibit-startup-message t)
 (setq visible-bell t)
+(setq ring-bell-function 'ignore)
 (setq make-backup-files nil)
 (scroll-bar-mode 0)
-(menu-bar-mode 0)
+(menu-bar-mode 1)
 (tool-bar-mode 0)
 (show-paren-mode)
 (column-number-mode t)
@@ -89,5 +83,4 @@
 
 (xterm-mouse-mode 1)
 (global-auto-revert-mode 1)
-(setq browse—url—generic—program "/home/ppinto/tools/url_client")
-(setq browse—url—browser—function 'browse—url—generic) 
+(setq browse—url—browser—function 'browse—url—chrome) 
